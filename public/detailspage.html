@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Email Support - Details</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="./stylesheets/style.css">
+
+</head>
+<script>
+    id = window.location.search.substring(1).split('=')[1];
+
+    function getEmailDetails() {
+        URL = "https://" + window.location.hostname + ":" + window.location.port + "/rest/emailDetails/" + id;
+
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("GET", URL, false);
+        xmlhttp.setRequestHeader("Content-Type", "application/json");
+        //xmlhttp.onreadystatechange = callbackFunction(xmlhttp);
+        xmlhttp.send();
+        //alert(typeof(xmlhttp.responseText));
+        var responseJSON = JSON.parse(xmlhttp.responseText);
+        //alert(responseJSON.docs.length);
+
+        var emailTable = document.createElement("table");
+        emailTable.setAttribute('id', 'email');
+        tr = emailTable.insertRow(-1);
+        //tr.setAttribute("bgcolor", "grey");
+        var th = document.createElement("th");
+        //td = tr.insertCell(-1);
+        th.innerHTML = "Email";
+        tr.appendChild(th);
+        tr = emailTable.insertRow(-1);
+        td = tr.insertCell(-1);
+        td.innerHTML = "Subject: " + responseJSON.emailSection.subject;
+        tr = emailTable.insertRow(-1);
+        td = tr.insertCell(-1);
+        td.innerHTML = "Sender: " + responseJSON.emailSection.from;
+        tr = emailTable.insertRow(-1);
+        td = tr.insertCell(-1);
+        td.innerHTML = "Text: " + responseJSON.emailSection.text;
+
+        var divContainer = document.getElementById("emailData");
+        divContainer.innerHTML = "";
+        divContainer.appendChild(emailTable);
+
+        var entities = responseJSON.summarySection.entities;
+        keys = Object.keys(entities)
+        var summaryTable = document.createElement("table");
+        summaryTable.setAttribute('id', 'summary');
+        tr = summaryTable.insertRow(-1);
+        //tr.setAttribute("bgcolor", "grey");
+        th = document.createElement("th");
+        //td = tr.insertCell(-1);
+        th.innerHTML = "Request type: " + responseJSON.summarySection.requestType;
+        tr.appendChild(th);
+        var isAnyInfoMissing = false;
+        for (var i = 0; i < keys.length; i++) {
+            tr = summaryTable.insertRow(-1);
+            td = tr.insertCell(-1);
+            if (!entities[keys[i]] || entities[keys[i]].length == 0) {
+                td.setAttribute("style", "color:red");
+                isAnyInfoMissing = true;
+            }
+            td.innerHTML = keys[i] + ':' + entities[keys[i]];;
+        }
+        divContainer = document.getElementById("summaryData");
+        divContainer.innerHTML = "";
+        divContainer.appendChild(summaryTable);
+
+        var replyTable = document.createElement("table");
+        replyTable.setAttribute('id', 'reply');
+        tr = replyTable.insertRow(-1);
+        //tr.setAttribute("bgcolor", "grey");
+        //td = tr.insertCell(-1);
+        th = document.createElement("th");
+        th.innerHTML = "Reply to: " + responseJSON.emailSection.from;
+        tr.appendChild(th);
+        tr = replyTable.insertRow(-1);
+        td = tr.insertCell(-1);
+        td.innerHTML = responseJSON.replySection.replyText;
+
+        // Add button only if email is to be sent for additional information
+        if (isAnyInfoMissing) {
+
+            tr = replyTable.insertRow(-1);
+            td = tr.insertCell(-1);
+            td.setAttribute("align", "right");
+            var btn = document.createElement("BUTTON");
+            btn.onclick = sendmail;
+            var btnName = document.createTextNode("Send Email");
+            btn.appendChild(btnName);
+            td.appendChild(btn);
+        }
+
+        divContainer = document.getElementById("replyData");
+        divContainer.innerHTML = "";
+        divContainer.appendChild(replyTable);
+    }
+
+    function sendmail() {
+        //alert("This function is to send email for id " + id);
+
+        URL = "https://" + window.location.hostname + ":" + window.location.port + "/rest/emailsender/" + id;
+
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("GET", URL, false);
+        //xmlhttp.setRequestHeader("Content-Type", "application/json");
+        //xmlhttp.onreadystatechange = callbackFunction(xmlhttp);
+        xmlhttp.send();
+        //alert(typeof(xmlhttp.responseText));
+        var response = xmlhttp.responseText;
+        //alert(responseJSON.docs.length);
+        if (response == "success") {
+            alert("Email sent successfully");
+        }else {
+            alert("Error sending email");
+        }
+    }
+
+</script>
+
+<body onload="getEmailDetails()">
+    <nav class="navbar navbar-inverse">
+        <div class="container-fluid">
+            <div class="collapse navbar-collapse" id="myNavbar">
+                <ul class="nav navbar-nav" style="width: 100%">
+                    <li>
+                        <a href="./index.html">Overview</a>
+                    </li>
+                    <li>
+                        <a href="./emails.html">Emails</a>
+                    </li>
+                    <li style="text-align: center; width: 80%; font-size: x-large">
+                        <a href="#">Email Support Classifier</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container text-center">
+        <h3>Email Details</h3>
+        <div class="row" id="overview-row">
+        </div>
+    </div>
+    <br>
+
+    <div id="emailData"></div>
+    <br/>
+    <br/>
+    <div id="summaryData"></div>
+    <br/>
+    <br/>
+    <div id="replyData"></div>
+</body>
+
+</html>
